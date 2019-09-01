@@ -1,0 +1,4 @@
+<?php
+$SERVER_IP = '127.0.0.1';
+$SERVER_PORT = '1026';
+$MAX_TIME=15;

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>chat</title>
+<script src="jquery.min.js"></script>
+<script src="jquery.cookie.js"></script>
+<script src="ensoshared.js"></script>
+
+</head>
+<body style='background: black'  onclick="$('#msg').focus();">
+
+	<div
+		style='background: white; color: black; position: absolute; top: 15px; width: 100%; text-align: center; font-family: monospace; z-index: 10'
+		id='header'  onclick="$('#msg').focus();">ROOM / NICK</div>
+	<input type=text name=msg id=msg
+		style='position: absolute; bottom: 15px; width: 75%; background: black; color: white; font-family: monospace'>
+	<button onclick='processInput($("#msg").val())'
+		style='position: absolute; bottom: 15px; right: 13%; width: 9%; background: black; color: white; font-family: monospace' id='enviar'>enviar</button>
+	<button onclick='getPin()'
+		style='position: absolute; bottom: 15px; right: 15px; width: 9%; background: black; color: white; font-family: monospace' id='pin_button'>set pin</button>
+	<div
+		style='position: absolute; height: 94%; width: 100%;background-size: contain' id='message-list-back' onclick="$('#msg').focus();">
+		<div id="message-list"
+			style='color: white; position: absolute; bottom: 0px; font-family: monospace' onclick="$('#msg').focus();"></div>
+	</div>
+
+	<script>
+		var channel = 'default';
+		var nick = 'default';
+		var lastTimestamp = 0;
+		var bg_url = '';
+		var bg_color = 'black';
+		var fg_color = 'white';
+		var sound = false;
+		var pin='';
+		
+		
+
+		$(document).ready(function() {
+			channel = window.location.hash.substr(1);
+			channel = channel.substring(0, 32);
+
+			if (channel == '13') {
+				//reset all cookies
+				$.removeCookie('sound', null);
+				$.removeCookie('bg_color', null);
+				$.removeCookie('bg_url', null);
+			}
+
+			//read config vars
+			if (typeof $.cookie('bg_url') != 'undefined') {
+				bg_url = $.cookie('bg_url');
+			}
+			if (typeof $.cookie('bg_color') != 'undefined') {
+				bg_color = $.cookie('bg_color');
+			}
+			if (typeof $.cookie('sound') != 'undefined') {
+				sound = true;
+			}
+
+			
+			applyVisuals();
+			
+			nick = prompt("Please enter your nick", "Harry Potter");
+
+			//Start the server
+			launchServer();
+
+			$("#msg").bind("keypress", {}, keypressInBox);
+
+			function keypressInBox(e) {
+				var code = (e.keyCode ? e.keyCode : e.which);
+				if (code == 13) { //Enter keycode                        
+					processInput($("#msg").val());
+				}
+			}
+			;
+
+			setInterval(function() {
+				send('');
+			}, 2000);
+
+			setTitle('');
+			$('#header').html('#' + channel + " / " + nick);
+
+			$('#msg').focus();
+			
+			
+			$(window).focus(function() {
+			    window_focus = true;
+				setTitle('');
+
+			}).blur(function() {
+			    window_focus = false;
+			});
+
+		});
+		
+		
+		function getPin(){
+			pin = prompt("Set a pin", "");
+			if (pin=='')
+				$('#pin_button').html('set pin');
+			else
+				$('#pin_button').html('clear pin');
+		}
+		
+		function playSound(){
+			
+			if (!sound)
+				return;
+			
+			var audio = new Audio('blip.wav');
+			audio.play();
+		}
+
+		function applyVisuals(){
+			
+			
+			//imagem
+			if (bg_url!==''){
+				$('#message-list-back').css('background-image','url('+bg_url+')');
+			}
+			else{
+				$('#message-list-back').css('background-image','none');
+				$('#message-list-back').css('background-color',bg_color);
+				
+			}
+			
+			//body
+			$("body").css("background-color",bg_color);
+
+			//msg
+			$('#msg').css('background-color',bg_color);
+			$('#msg').css('color',fg_color);
+			
+			//button
+			$('#enviar').css('background-color',bg_color);
+			$('#enviar').css('color',fg_color);
+			
+		
+			//message-list
+			if (bg_url!==''){
+				$('#message-list').css('background-color','#00000000');
+				$('#message-list').css('color','white');
+				
+			}
+			else{
+				$('#message-list').css('background-color',bg_color);
+				$('#message-list').css('color',fg_color);
+			}
+			
+			
+			
+		}
+		
+		function setTitle(addon) {
+			if (addon!=''){
+				playSound();
+			}
+			document.title = addon + '#' + channel + " / " + nick;
+		}
+
+		function display(msg) {
+			$('#message-list').append(msg + "<br/>");
+		}
+
+		function processInput(msg) {
+			msg = msg.trim();
+			if (msg.charAt(0) == '/') {
+				var cmd = msg.slice(1).split(" ");
+
+				display("");
+
+				switch (cmd[0]) {
+				case 'bg':
+					if (cmd.length < 2) {
+						display('*** bg url was set to none');
+						bg_url = '';
+						$.removeCookie('bg_url', null);
+						applyVisuals();
+						break;
+					}
+
+					bg_url = cmd[1];
+					$.cookie('bg_url', bg_url);
+
+					display('*** bg url was set to ' + bg_url);
+					applyVisuals();
+					
+					break;
+				case 'bg-color':
+					if (cmd.length < 2) {
+						display('*** you must supply a color code');
+						break;
+					}
+
+					bg_color = cmd[1];
+					$.cookie('bg_color', bg_color);
+
+					display('*** bg color was set to ' + bg_color);
+					applyVisuals();
+
+					break;
+				case 'sound':
+					sound = !sound;
+					if (sound) {
+						display('*** Sound is now on');
+						$.cookie('sound', '1', 13 * 365);
+					} else {
+						display('*** Sound is now off');
+						$.removeCookie('sound', null);
+					}
+
+					break;
+					
+				case 'joshua':
+					display("");
+					display("");
+					display("*** Shall we play a game?");
+					display("*** <a href=https://www.google.pt/search?q=shall+we+play+a+game target=_new>Oh!</a>");
+					display("");
+					display("");
+					break;
+				default:
+					display("*** HELP ***");
+					display("");
+					display("/help - display this help message");
+					display("/bg URL - change current background to this image url");
+					display("/sound - toogle sound on/off");
+					display("/bg-color #AAAAAAe - change current background to the supplied hex color code");
+					display("");
+					display("* IMPORTANT.... no validations...whatever you do with this commands changes your client...you f*ckit..you deal with it :)");
+					display("* run me with the room #13 and all wil be reseted :)");
+					display("");
+					display("");
+
+				}
+				display("");
+				$('#msg').val('');
+				$('#msg').focus();
+				return;
+			}
+			send(msg);
+		}
+
+		function send(msg) {
+
+			sendmsg = '';
+			if (msg.length > 0) {
+				sendmsg = "@" + nick + " | " + $('#msg').val();
+				if (pin!=''){
+					sendmsg=EnsoShared.encrypt(sendmsg,EnsoShared.normalizeKey(pin));
+				}
+			}
+
+			$.ajax({
+				url : "client.php",
+				method : 'get',
+				data : {
+					room : channel,
+					msg : sendmsg
+				},
+				cache : false,
+				complete : function(html) {
+					if (msg.length > 0)
+						$('#msg').val('');
+
+					try {
+						messages = JSON.parse(html.responseText);
+						$('#header').css('background', 'lightgreen');
+
+						$('#header').html(
+								'#' + channel + " / " + nick + " [online]");
+						for (var i = 0; i < messages.length; i++) {
+							if (lastTimestamp < messages[i][0]) {
+								if (pin!=''){
+									messages[i][1]=EnsoShared.decrypt(messages[i][1],EnsoShared.normalizeKey(pin));
+								}
+								var pos = messages[i][1].indexOf('@');
+								var str = messages[i][1].substring(pos,
+										messages[i][1].length);
+								var nickTMP = str
+										.substring(0, str.indexOf('|'));
+								var nickHTML = '<font color="'
+										+ convertToColor(nickTMP) + '">'
+										+ nickTMP + '</font>';
+								var msgHTML = str.substring(nickTMP.length,
+										str.length);
+								msgHTML = replaceURLWithHTMLLinks(msgHTML);
+
+								display(timeConverter(messages[i][0]) + " "
+										+ nickHTML + msgHTML);
+	
+								if (msg=='' && window_focus==false){
+									setTitle('! new-message !');
+								}
+								lastTimestamp = messages[i][0];
+							}
+						}
+					} catch (e) {
+						console.log('server seems to be offline');
+						$('#header').css('background', 'yellow');
+						$('#header').html(
+								'#' + channel + " / " + nick
+										+ " [offline..starting "
+										+ (+new Date()) + "]");
+					}
+				}
+			});
+		}
+		
+		function invertColor(hex) {
+		    if (hex.indexOf('#') === 0) {
+		        hex = hex.slice(1);
+		    }
+		    // convert 3-digit hex to 6-digits.
+		    if (hex.length === 3) {
+		        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+		    }
+		    if (hex.length !== 6) {
+		        throw new Error('Invalid HEX color.');
+		    }
+		    // invert color components
+		    var r = (255 - parseInt(hex.slice(0, 2), 16)).toString(16),
+		        g = (255 - parseInt(hex.slice(2, 4), 16)).toString(16),
+		        b = (255 - parseInt(hex.slice(4, 6), 16)).toString(16);
+		    // pad each with zeros and return
+		    return '#' + padZero(r) + padZero(g) + padZero(b);
+		}
+
+		function padZero(str, len) {
+		    len = len || 2;
+		    var zeros = new Array(len).join('0');
+		    return (zeros + str).slice(-len);
+		}
+
+		function replaceURLWithHTMLLinks(text) {
+			var exp = /(\b(https?|http):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+			return text.replace(exp, "<a href='$1' target=_new>$1</a>");
+		}
+
+		function convertToColor(str) {
+			var colors = [ 'violet', 'green', 'red', 'cyan', 'yellow' ];
+			var sum = 0;
+			for (var i = 0; i < str.length; i++) {
+				sum += str.charCodeAt(i);
+			}
+			return colors[sum % colors.length];
+		}
+
+		function timeConverter(UNIX_timestamp) {
+			var a = new Date(UNIX_timestamp * 1000);
+			var months = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+					'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
+			var year = a.getFullYear();
+			var month = months[a.getMonth()];
+			var date = a.getDate();
+			var hour = a.getHours();
+			var min = a.getMinutes();
+			var sec = a.getSeconds();
+			if (hour < 10)
+				hour = '0' + hour;
+			if (min < 10)
+				min = '0' + min;
+			if (sec < 10)
+				sec = '0' + sec;
+
+			var time = hour + ':' + min + ':' + sec;
+			return time;
+		}
+
+		function launchServer() {
+// 			console.log('Starting server');
+			$.ajax({
+				url : "server.php",
+				cache : false,
+				complete : function(html) {
+// 					console.log("Server returned");
+					setTimeout(launchServer, 5000);
+				}
+			});
+		}
+	</script>
+</body>
+</html>
