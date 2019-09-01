@@ -22,7 +22,7 @@ A small configuration can be found in config.php
 
 The client is a simples HTML / JS webpage, that allows for a few client side configurations (like activating bgimages, sound notifications, etc.. all "command line stile" like old irc clients). There is a small routine to cypher messages but this is all done client side... you set a key, javascript then starts encrypting, and sending the encrypted result to the server. The server is not aware of any type of encryption...it just forwards.. and any client that has the same key will decrypt...all others will get garbled text.
 
-You should access with http://your-server-ip/#room-name
+You should access with <http://your-server-ip/#room-name>
 
 Use:
 /help - to see available client side commands
@@ -33,6 +33,6 @@ Not enough tests where made...not enough reviews where made... this was just a f
 
 ## Install
 
-Just drop the code on any folder accessible through your php enabled web server and point your browser to http://your-server-ip/#desired-room-name
+Just drop the code on any folder accessible through your php enabled web server and point your browser to <http://your-server-ip/#desired-room-name>
 
 Any other client that access the same room will be able to receive messages.
